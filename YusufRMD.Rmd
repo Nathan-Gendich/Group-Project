@@ -1,0 +1,12 @@
+---
+title: "Yusuf RMD"
+author: "Yusuf Uzhunnan"
+date: "11/30/2020"
+output: html_document
+---
+
+```{r}
+sum <- 5+5
+sum
+```
+
