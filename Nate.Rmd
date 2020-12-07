@@ -1,0 +1,16 @@
+---
+title: "Nate"
+author: "Nathan Gendich"
+date: "11/30/2020"
+output: html_document
+---
+
+```{r}
+# Read the data set
+ridedata <- read.csv(FinalProjectData)
+
+
+
+```
+
+
