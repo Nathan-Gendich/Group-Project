@@ -9,8 +9,12 @@ output:
 ---
 
 ```{r}
-
-
+RideData <- read.csv("SampleCitiBike copy.csv")
+Weather <- read.csv("NYCWeather2019.csv")
+RideData$date <- as.Date(RideData$starttime)
+Weather$DATE <- as.Date(Weather$DATE, "%m/%d/%Y")
+fulldata <- merge(RideData, Weather, by.x = "date", by.y = "DATE")
+write.csv(fulldata, file = "fulldata.csv")
 
 ```
 
