@@ -5,12 +5,74 @@ date: "11/30/2020"
 output: html_document
 ---
 
+
+
 ```{r}
 # Read the data set
-ridedata <- read.csv(FinalProjectData)
 
 
 
 ```
+
+
+```{r}
+fulldata$gender <-ifelse(fulldata$gender >1, "Female",
+                         ifelse(fulldata$gender > 0, "Male",
+                                "Unknown"))
+fulldata$age <- 2019 - fulldata$birth.year
+
+```
+
+```{r}
+library(dplyr)
+library(ggplot2)
+by_day <- group_by(fulldata, date)
+ridesperday <- summarise(by_day,
+                         count = n())
+                        
+ridesperday$rides <- ridesperday$count
+ridesperday$count <- NULL
+ridesperday
+tempperday <- summarise(by_day, TAVG, PRCP, AWND, SNOW, SNWD)
+perday <- merge(ridesperday,tempperday, by.x = "date", by.y = "date")
+perday<-unique(perday)
+perday$TEMP <- ifelse(perday$TAVG >= 80, "Hot",
+                               ifelse(perday$TAVG >= 60, "Warm",
+                                      ifelse(perday$TAVG >= 45, "Temperate",
+                                             ifelse(perday$TAVG >= 33, "Chilly",
+                                                  ifelse(perday$TAVG >= 0, "Freezing")))))
+perday$Rainfall <- ifelse(perday$PRCP > 0.5, "Heavy",
+                          ifelse(perday$PRCP >0.1, "Moderate",
+                                 ifelse(perday$PRCP > 0, "Light", "None")))
+perday[is.na(perday)] = 0
+perday$Wind <- ifelse(perday$AWND > 10.5, "Strong Breeze",
+                          ifelse(perday$AWND >8.5, "Fresh Breeze",
+                                 ifelse(perday$AWND > 5.5, "Moderate Breeze",
+                                        ifelse(perday$AWND > 3.5, "Gentle Breeze",
+                                               ifelse(perday$AWND > 2, "Light Breeze",
+                                                      ifelse(perday$AWND > 0, "Light Air", "None"))))))
+perday
+```
+
+`r mean(perday$rides)`
+
+```{r}
+library(ggplot2)
+ggplot(perday, aes(x=date)) +
+  geom_line( aes(y=rides)) + 
+  geom_line( aes(y=TAVG)) +
+  scale_y_continuous(name = "Number of Rides",sec.axis = sec_axis(name="Average Temperature", breaks = waiver()))
+```
+
+```{r}
+#Use perday to find avg daily rides given perday TEMP, Rainfall, Wind
+```
+
+
+
+
+
+
+
 
 

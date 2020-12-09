@@ -15,7 +15,12 @@ RideData$date <- as.Date(RideData$starttime)
 Weather$DATE <- as.Date(Weather$DATE, "%m/%d/%Y")
 fulldata <- merge(RideData, Weather, by.x = "date", by.y = "DATE")
 write.csv(fulldata, file = "fulldata.csv")
+fulldata$TAVG <- (fulldata$TMAX + fulldata$TMIN)/2
+fulldata$X <- fulldata$X.1
+fulldata$X.1 <- NULL
+fulldata$tripduration <- fulldata$tripduration/60
 
+? distm(c(fulldata$start.station.longitude, fulldata$start.station.latitude), c(fulldata$end.station.longitude, fulldata$end.station.latitude), fun = distHaversine)
 ```
 
 
