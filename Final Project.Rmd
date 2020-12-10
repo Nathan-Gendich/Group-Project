@@ -19,8 +19,9 @@ fulldata$TAVG <- (fulldata$TMAX + fulldata$TMIN)/2
 fulldata$X <- fulldata$X.1
 fulldata$X.1 <- NULL
 fulldata$tripduration <- fulldata$tripduration/60
-
-? distm(c(fulldata$start.station.longitude, fulldata$start.station.latitude), c(fulldata$end.station.longitude, fulldata$end.station.latitude), fun = distHaversine)
+library(geosphere)
+fulldata$distance <- distHaversine(cbind(fulldata$start.station.longitude, fulldata$start.station.latitude), cbind(fulldata$end.station.longitude, fulldata$end.station.latitude)) #meters
+# speed fulldata$avgspeed <- fulldata
 ```
 
 

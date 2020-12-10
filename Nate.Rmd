@@ -55,19 +55,25 @@ perday
 ```
 
 `r mean(perday$rides)`
+`r sd(perday$rides)`
 
-```{r}
-library(ggplot2)
-ggplot(perday, aes(x=date)) +
-  geom_line( aes(y=rides)) + 
-  geom_line( aes(y=TAVG)) +
-  scale_y_continuous(name = "Number of Rides",sec.axis = sec_axis(name="Average Temperature", breaks = waiver()))
-```
 
 ```{r}
 #Use perday to find avg daily rides given perday TEMP, Rainfall, Wind
+
+lm()
 ```
 
+```{r}
+# grid.arrange
+library(grid)
+library(gridExtra)
+ggplot(perday, aes(x=date)) +
+  geom_line( aes(y=rides))
+
+ggplot(perday, aes(x=date, y=TAVG))+ 
+  geom_line()
+```
 
 
 
