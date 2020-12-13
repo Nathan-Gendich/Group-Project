@@ -30,7 +30,7 @@ citidata$gender <- as.factor(citidata$gender)
 citidata2 <-
     citidata %>%
     mutate (gender1 = ifelse(citidata$gender==1,"Male",ifelse(citidata$gender==2,"Female","Unknown")) ) 
-
+    
 #table of average trip duration and average age by gender
 demographics <- 
     citidata2 %>%
