@@ -1,0 +1,94 @@
+---
+title: "CitiBike"
+author: "Tanisha Pardasani"
+date: "12/13/2020"
+output: html_document
+---
+```{r}
+library(tidyverse)
+library(dplyr) 
+library(ggplot2)
+library(lubridate)
+```
+
+
+```{r}
+citidata <- read.csv("fulldata.csv")
+```
+
+```{r}
+head(citidata)
+```
+
+
+
+What are the demographics of riders?
+```{r}
+#convert genders numbers to names
+citidata$gender <- as.factor(citidata$gender)
+
+citidata2 <-
+    citidata %>%
+    mutate (gender1 = ifelse(citidata$gender==1,"Male",ifelse(citidata$gender==2,"Female","Unknown")) ) 
+
+#table of average trip duration and average age by gender
+demographics <- 
+    citidata2 %>%
+    group_by (gender1) %>%
+    mutate (age = 2019 - birth.year) %>%
+    summarize (count = n(), average_trip_duration = mean (tripduration),
+                average_age = mean(age) ) %>%
+    arrange(desc(count))
+demographics
+    
+```
+The age of riders for each gender are fairly similar. On average, females have longer trip durations of about 165 seconds.
+
+
+
+```{r}
+ggplot (demographics) + 
+    geom_line(mapping = aes(x=gender1, y=count), color="green") +
+    geom_line(mapping = aes(x=gender1, y=average_trip_duration), color="blue") +
+    geom_line(mapping = aes(x=gender1, y=average_age), color="red")  +
+    ggtitle( "Data by Gender") +
+    xlab (" Gender") +
+    ylab ("Count (Green), Average Trip Duration (Blue), Average Age (Red)")
+```
+
+What station is the start of most trips?
+```{r}
+start_station <- 
+  citidata %>% 
+  group_by(start.station.name) %>% 
+  summarize(bikes_taken=n()) %>% 
+  arrange(desc(bikes_taken)) 
+head (start_station)
+```
+
+What station is the end of most trips?
+```{r}
+end_station <- 
+  citidata %>% 
+  group_by(end.station.name) %>% 
+  summarize(bikes_returned=n()) %>% 
+  arrange(desc(bikes_returned)) 
+head (end_station)
+```
+Pershing Square North and E 17 St & Broadway are the most popular start and end stations. 
+
+
+Which stations have more bikes leave than arrive?
+```{r}
+merged <- merge ( start_station, end_station, by.x = "start.station.name", by.y = "end.station.name")
+
+new_table <-
+  merged %>%
+  filter ( bikes_taken > bikes_returned) %>%
+  summarize ( "Station Name"=start.station.name , "Bikes Taken" = bikes_taken , "Bikes Returned" =     
+              bikes_returned )
+
+head(new_table)
+```
+
+About half (458 out of 927 total stations) of the stations have more bikes taken than returned. 
