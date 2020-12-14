@@ -4,9 +4,71 @@ author: "Yusuf Uzhunnan"
 date: "11/30/2020"
 output: html_document
 ---
-
 ```{r}
-sum <- 5+5
-sum
+library(dplyr)
+library()
+library("ggplot2")
+library(geosphere)
+library(stringr)
+library(McSpatial)
 ```
 
+Read file
+```{r}
+citiBikePlusWeather <- read.csv("FinalProjectData.csv")
+```
+
+Create new columns for distance and speed
+```{r}
+citiBikePlusWeather$distance <- 1609.344 * geodistance(citiBikePlusWeather$start.station.longitude,citiBikePlusWeather$start.station.latitude,citiBikePlusWeather$end.station.longitude,citiBikePlusWeather$end.station.latitude)$dist
+
+#Create speed column
+citiBikePlusWeather$avgspeed <- (citiBikePlusWeather$distance / citiBikePlusWeather$tripduration)
+
+```
+
+### What impact does the rate of rainfall have on rider speed?
+```{r}
+rainfallVsSpeed <- ggplot(data=citiBikePlusWeather, aes(x=PRCP, y=avgspeed)) + geom_point(size=.5, alpha=.1) + geom_smooth(method = "lm")
+rainfallVsSpeed
+```
+Interestingly, it looks like people ride faster when there is no rain. However, once it starts raining, people tend to ride slightly slower, regardless of how much rain it actually is. Once it is raining significantly enough , people's speeds slow down.
+
+### Is there any connection between snowfall and the age of riders?
+```{r}
+# Add column for age
+citiBikePlusWeather$age <- 2019 - citiBikePlusWeather$birth.year
+
+# Find and Remove age Outliers
+Q1 <- quantile(citiBikePlusWeather$age, probs=c(.25, .75), na.rm = FALSE)
+iqr1 <- IQR(citiBikePlusWeather$age)
+upperEnd1 <-  Q1[2]+1.5*iqr1   
+lowerEnd1 <- Q1[1]-1.5*iqr1 
+
+noOutliersAgeData <- citiBikePlusWeather[citiBikePlusWeather$age > lowerEnd1 & citiBikePlusWeather$age < upperEnd1, ]
+
+# Remove age 50 
+ageWithout50Data <- noOutliersAgeData[noOutliersAgeData$age != 50, ]
+
+snowfallVsAge <- ggplot(data=ageWithout50Data, aes(x=SNOW, y=age)) + geom_point(size=.5, alpha=.1)
+snowfallVsAge
+```
+There does not seem to be any meaningful correlation between age and snowfall. The only main observation I can see is that when there is zero snowfall, the 70+ year olds are using bikes. However, once a bit of snow starts falling, there are less old people riding. This makes sense as slippery roads may be more of a danger for older people.
+
+### Who tends to ride in hotter temperatures, customers or subscribers?
+```{r}
+# Add column for middle temperature
+citiBikePlusWeather$TMID <- (citiBikePlusWeather$TMAX + citiBikePlusWeather$TMIN) / 2
+
+avgTempByUserType <- tapply(citiBikePlusWeather$TMID,citiBikePlusWeather$usertype,mean, na.rm = TRUE)
+avgTempByUserTypeBarplot <- barplot(sort(avgTempByUserType, decreasing = TRUE),ylab = "Average Temperature")
+avgTempByUserTypeBarplot
+```
+We can see that subscribers ride in cooler temperatures than customers. This makes sense, as customers are more likely to be tourists who tend to visit more often in the summer months.
+
+### How does wind speed impact ride speed with varying amounts of rain
+```{r}
+windVsSpeed <- ggplot(data=citiBikePlusWeather, aes(x=AWND, y=avgspeed)) + geom_point(size=.5, alpha=.1) + geom_smooth(method = "lm")
+windVsSpeed
+```
+From the graph above, we can see that as wind speeds increase, there is a lot of variation in speed of riders. There does seem to be a slight trend suggesting that higher wind speeds cause slightly lower ride speeds, which makes sense.
