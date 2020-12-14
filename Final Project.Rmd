@@ -1,28 +1,249 @@
 ---
 title: "Final Project"
-author: "Nathan Gendich"
-date: "11/30/2020"
+author: "Nathan Gendich, Yusuf Uzhunnan, Tanisha Pardasani, Nicholas Lombard, Ryan Nelson"
+date: "12/15/2020"
 output: 
   html_document:
     toc: yes
     toc_float: yes
 ---
-
+# Read Data
 ```{r}
 RideData <- read.csv("SampleCitiBike copy.csv")
 Weather <- read.csv("NYCWeather2019.csv")
 RideData$date <- as.Date(RideData$starttime)
 Weather$DATE <- as.Date(Weather$DATE, "%m/%d/%Y")
 fulldata <- merge(RideData, Weather, by.x = "date", by.y = "DATE")
-write.csv(fulldata, file = "fulldata.csv")
 fulldata$TAVG <- (fulldata$TMAX + fulldata$TMIN)/2
 fulldata$X <- fulldata$X.1
 fulldata$X.1 <- NULL
-fulldata$tripduration <- fulldata$tripduration/60
 library(geosphere)
 fulldata$distance <- distHaversine(cbind(fulldata$start.station.longitude, fulldata$start.station.latitude), cbind(fulldata$end.station.longitude, fulldata$end.station.latitude)) #meters
 # speed fulldata$avgspeed <- fulldata
 ```
+
+
+# Nate
+
+```{r}
+fulldata$gender <-ifelse(fulldata$gender >1, "Female",
+                         ifelse(fulldata$gender > 0, "Male",
+                                "Unknown"))
+fulldata$age <- 2019 - fulldata$birth.year
+
+```
+
+```{r}
+library(dplyr)
+library(ggplot2)
+by_day <- group_by(fulldata, date)
+ridesperday <- summarise(by_day,
+                         count = n())
+                        
+ridesperday$rides <- ridesperday$count
+ridesperday$count <- NULL
+ridesperday
+tempperday <- summarise(by_day, TAVG, PRCP, AWND, SNOW, SNWD)
+perday <- merge(ridesperday,tempperday, by.x = "date", by.y = "date")
+perday<-unique(perday)
+perday$TEMP <- ifelse(perday$TAVG >= 80, "Hot",
+                               ifelse(perday$TAVG >= 60, "Warm",
+                                      ifelse(perday$TAVG >= 45, "Temperate",
+                                             ifelse(perday$TAVG >= 33, "Chilly",
+                                                  ifelse(perday$TAVG >= 0, "Freezing")))))
+perday$Rainfall <- ifelse(perday$PRCP > 0.5, "Heavy",
+                          ifelse(perday$PRCP >0.1, "Moderate",
+                                 ifelse(perday$PRCP > 0, "Light", "None")))
+perday[is.na(perday)] = 0
+perday$Wind <- ifelse(perday$AWND > 7.5, "Gentle Breeze",
+                          ifelse(perday$AWND >3.5, "Light Breeze",
+                                 ifelse(perday$AWND > 1, "Light Air", "None")))
+                                       
+perday
+```
+
+`r mean(perday$rides)`
+`r sd(perday$rides)`
+
+
+```{r}
+library(colorspace)
+library(ggplot2)
+#Use perday to find avg daily rides given perday TEMP, Rainfall, Wind
+by_temp <- group_by(perday, TEMP)
+daystemp <- summarise(by_temp,
+                         count = n(),
+                         rides_avg = round(mean(rides, na.rm = TRUE),0))
+daystemp
+ggplot(data = daystemp, aes(x=TEMP ,y=rides_avg)) + ggtitle("Average Rides/Day by Temp") + geom_bar(stat = "identity",fill = "slateblue")+xlab("Temperature")+ylab("Average Rides/Day")
+by_rain <- group_by(perday, Rainfall)
+daysrain <- summarise(by_rain,
+                         count = n(),
+                         rides_avg = round(mean(rides, na.rm = TRUE),0))
+daysrain
+ggplot(data = daysrain, aes(x=Rainfall ,y=rides_avg)) + ggtitle("Average Rides/Day by Rain") + geom_bar(stat = "identity",fill = "slateblue")+xlab("Rainfall")+ylab("Average Rides/Day")
+by_wind <- group_by(perday, Wind)
+dayswind <- summarise(by_wind,
+                         count = n(),
+                         rides_avg = round(mean(rides, na.rm = TRUE),0))
+dayswind
+ggplot(data = dayswind, aes(x=Wind ,y=rides_avg)) + ggtitle("Average Rides/Day by Wind") + geom_bar(stat = "identity",fill = "slateblue")+xlab("Wind")+ylab("Average Rides/Day")
+```
+
+As seen from these graphics, there is generally more ridership during Warm and Hot days, days with zero or light rainfall, and days with just a bit of wind.
+
+
+```{r}
+# grid.arrange
+library(grid)
+library(gridExtra)
+ggplot(perday, aes(x=date)) +
+  geom_line( aes(y=rides))
+
+ggplot(perday, aes(x=date, y=TAVG))+ 
+  geom_line()
+```
+
+You can see that as temperature rises and falls throughout the year, the number of rides mimics that as well. These two graphs look very similar.
+
+# Yusuf
+
+```{r}
+library(dplyr)
+library()
+library("ggplot2")
+library(geosphere)
+library(stringr)
+library(McSpatial)
+```
+
+
+Create new columns for distance and speed
+```{r}
+#Create speed column
+fulldata$avgspeed <- (fulldata$distance / fulldata$tripduration)
+
+```
+
+### What impact does the rate of rainfall have on rider speed?
+```{r}
+rainfallVsSpeed <- ggplot(data=fulldata, aes(x=PRCP, y=avgspeed)) + geom_point(size=.5, alpha=.1) + geom_smooth(method = "lm")
+rainfallVsSpeed
+```
+Interestingly, it looks like people ride faster when there is no rain. However, once it starts raining, people tend to ride slightly slower, regardless of how much rain it actually is. Once it is raining significantly enough , people's speeds slow down.
+
+### Is there any connection between snowfall and the age of riders?
+```{r}
+# Find and Remove age Outliers
+Q1 <- quantile(fulldata$age, probs=c(.25, .75), na.rm = FALSE)
+iqr1 <- IQR(fulldata$age)
+upperEnd1 <-  Q1[2]+1.5*iqr1   
+lowerEnd1 <- Q1[1]-1.5*iqr1 
+
+noOutliersAgeData <- fulldata[fulldata$age > lowerEnd1 & fulldata$age < upperEnd1, ]
+
+# Remove age 50 
+ageWithout50Data <- noOutliersAgeData[noOutliersAgeData$age != 50, ]
+
+snowfallVsAge <- ggplot(data=ageWithout50Data, aes(x=SNOW, y=age)) + geom_point(size=.5, alpha=.1) + geom_jitter()
+snowfallVsAge
+```
+There does not seem to be any meaningful correlation between age and snowfall. The only main observation I can see is that when there is zero snowfall, the 70+ year olds are using bikes. However, once a bit of snow starts falling, there are less old people riding. This makes sense as slippery roads may be more of a danger for older people.
+
+### Who tends to ride in hotter temperatures, customers or subscribers?
+```{r}
+# Add column for middle temperature
+avgTempByUserType <- tapply(fulldata$TAVG,fulldata$usertype,mean, na.rm = TRUE)
+avgTempByUserTypeBarplot <- barplot(sort(avgTempByUserType, decreasing = TRUE),ylab = "Average Temperature")
+avgTempByUserTypeBarplot
+```
+We can see that subscribers ride in cooler temperatures than customers. This makes sense, as customers are more likely to be tourists who tend to visit more often in the summer months.
+
+### How does wind speed impact ride speed with varying amounts of rain
+```{r}
+windVsSpeed <- ggplot(data=fulldata, aes(x=AWND, y=avgspeed)) + geom_point(size=.5, alpha=.1) + geom_smooth(method = "lm")
+windVsSpeed
+```
+From the graph above, we can see that as wind speeds increase, there is a lot of variation in speed of riders. There does seem to be a slight trend suggesting that higher wind speeds cause slightly lower ride speeds, which makes sense.
+
+
+# Tanisha
+
+```{r}
+library(tidyverse)
+library(dplyr) 
+library(ggplot2)
+library(lubridate)
+```
+
+What are the demographics of riders?
+```{r}
+fulldata$gender <- as.factor(fulldata$gender)
+#table of average trip duration and average age by gender
+demographics <- 
+    fulldata %>%
+    group_by (gender) %>%
+    mutate (age) %>%
+    summarize (count = n(), average_trip_duration = (mean (tripduration)/60),
+                average_age = round(mean(age), 2) ) %>%
+    arrange(desc(count))
+demographics
+    
+```
+The age of riders for each gender are fairly similar. On average, females have longer trip durations of about `r round(demographics$average_trip_duration[demographics$gender == "Female"]-demographics$average_trip_duration[demographics$gender == "Male"], 2)` minutes.
+
+
+
+```{r}
+
+ggplot (demographics) + 
+    geom_line(mapping = aes(x=gender, y=count), color="green") +
+    geom_line(mapping = aes(x=gender, y=average_trip_duration), color="blue") +
+    geom_line(mapping = aes(x=gender, y=average_age), color="red")  +
+    ggtitle( "Data by Gender") +
+    xlab (" Gender") +
+    ylab ("Count (Green), Average Trip Duration (Blue), Average Age (Red)")
+```
+
+Most common start, end, and routes
+```{r}
+getmode <- function(v) {
+   uniqv <- unique(v)
+   uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+getmode(fulldata$start.station.name)
+getmode(fulldata$end.station.name)
+fulldata$route <- paste(fulldata$start.station.name, fulldata$end.station.name, sep = " -> ")
+getmode(fulldata$route)
+```
+
+The most common starting station was `r getmode(fulldata$start.station.name)`, the most common ending station was `r getmode(fulldata$end.station.name)` and the most common route was `r getmode(fulldata$route)` 
+
+
+Which stations have more bikes leave than arrive?
+```{r}
+start_station <- 
+  fulldata %>% 
+  group_by(start.station.name) %>% 
+  summarize(bikes_taken=n()) %>% 
+  arrange(desc(bikes_taken)) 
+end_station <- 
+  fulldata %>% 
+  group_by(end.station.name) %>% 
+  summarize(bikes_returned=n()) %>% 
+  arrange(desc(bikes_returned))
+merged <- merge (start_station, end_station, by.x = "start.station.name", by.y = "end.station.name")
+
+new_table <-
+  merged %>%
+  filter ( bikes_taken > bikes_returned) %>%
+  summarize ( "Station Name"=start.station.name , "Bikes Taken" = bikes_taken , "Bikes Returned" =     
+              bikes_returned )
+
+head(new_table)
+```
+
+About half, `r nrow(new_table)` out of `r nrow(merged)`, of the stations have more bikes taken than returned, which means these stations could be in danger of running out of bikes. 
 
 
 
