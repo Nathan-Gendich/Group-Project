@@ -45,12 +45,10 @@ perday$Rainfall <- ifelse(perday$PRCP > 0.5, "Heavy",
                           ifelse(perday$PRCP >0.1, "Moderate",
                                  ifelse(perday$PRCP > 0, "Light", "None")))
 perday[is.na(perday)] = 0
-perday$Wind <- ifelse(perday$AWND > 10.5, "Strong Breeze",
-                          ifelse(perday$AWND >8.5, "Fresh Breeze",
-                                 ifelse(perday$AWND > 5.5, "Moderate Breeze",
-                                        ifelse(perday$AWND > 3.5, "Gentle Breeze",
-                                               ifelse(perday$AWND > 2, "Light Breeze",
-                                                      ifelse(perday$AWND > 0, "Light Air", "None"))))))
+perday$Wind <- ifelse(perday$AWND > 7.5, "Gentle Breeze",
+                          ifelse(perday$AWND >3.5, "Light Breeze",
+                                 ifelse(perday$AWND > 1, "Light Air", "None")))
+                                       
 perday
 ```
 
@@ -60,8 +58,23 @@ perday
 
 ```{r}
 #Use perday to find avg daily rides given perday TEMP, Rainfall, Wind
+by_temp <- group_by(perday, TEMP)
+daystemp <- summarise(by_temp,
+                         count = n(),
+                         rides_avg = round(mean(rides, na.rm = TRUE),0))
+daystemp
 
-lm()
+by_rain <- group_by(perday, Rainfall)
+daysrain <- summarise(by_rain,
+                         count = n(),
+                         rides_avg = round(mean(rides, na.rm = TRUE),0))
+daysrain
+
+by_wind <- group_by(perday, Wind)
+dayswind <- summarise(by_wind,
+                         count = n(),
+                         rides_avg = round(mean(rides, na.rm = TRUE),0))
+dayswind
 ```
 
 ```{r}
