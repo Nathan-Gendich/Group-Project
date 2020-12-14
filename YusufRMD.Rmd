@@ -61,7 +61,7 @@ There does not seem to be any meaningful correlation between age and snowfall. T
 citiBikePlusWeather$TMID <- (citiBikePlusWeather$TMAX + citiBikePlusWeather$TMIN) / 2
 
 avgTempByUserType <- tapply(citiBikePlusWeather$TMID,citiBikePlusWeather$usertype,mean, na.rm = TRUE)
-avgTempByUserTypeBarplot <- barplot(sort(avgTempByUserType, decreasing = TRUE))
+avgTempByUserTypeBarplot <- barplot(sort(avgTempByUserType, decreasing = TRUE),ylab = "Average Temperature")
 avgTempByUserTypeBarplot
 ```
 We can see that subscribers ride in cooler temperatures than customers. This makes sense, as customers are more likely to be tourists who tend to visit more often in the summer months.
